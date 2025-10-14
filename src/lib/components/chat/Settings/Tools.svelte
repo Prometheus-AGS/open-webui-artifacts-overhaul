@@ -14,7 +14,7 @@
 	import Plus from '$lib/components/icons/Plus.svelte';
 	import Connection from './Tools/Connection.svelte';
 
-	import AddServerModal from '$lib/components/AddServerModal.svelte';
+	import AddToolServerModal from '$lib/components/AddToolServerModal.svelte';
 
 	export let saveSettings: Function;
 
@@ -31,7 +31,20 @@
 			toolServers: servers
 		});
 
-		toolServers.set(await getToolServersData($i18n, $settings?.toolServers ?? []));
+		let toolServersData = await getToolServersData($settings?.toolServers ?? []);
+		toolServersData = toolServersData.filter((data) => {
+			if (data.error) {
+				toast.error(
+					$i18n.t(`Failed to connect to {{URL}} OpenAPI tool server`, {
+						URL: data?.url
+					})
+				);
+				return false;
+			}
+
+			return true;
+		});
+		toolServers.set(toolServersData);
 	};
 
 	onMount(async () => {
@@ -39,9 +52,10 @@
 	});
 </script>
 
-<AddServerModal bind:show={showConnectionModal} onSubmit={addConnectionHandler} />
+<AddToolServerModal bind:show={showConnectionModal} onSubmit={addConnectionHandler} direct />
 
 <form
+	id="tab-tools"
 	class="flex flex-col h-full justify-between text-sm"
 	on:submit|preventDefault={() => {
 		updateHandler();
@@ -60,6 +74,7 @@
 
 							<Tooltip content={$i18n.t(`Add Connection`)}>
 								<button
+									aria-label={$i18n.t(`Add Connection`)}
 									class="px-1"
 									on:click={() => {
 										showConnectionModal = true;
@@ -74,9 +89,8 @@
 						<div class="flex flex-col gap-1.5">
 							{#each servers as server, idx}
 								<Connection
-									bind:url={server.url}
-									bind:key={server.key}
-									bind:config={server.config}
+									bind:connection={server}
+									direct
 									onSubmit={() => {
 										updateHandler();
 									}}
@@ -90,13 +104,24 @@
 					</div>
 
 					<div class="my-1.5">
-						<div class="text-xs text-gray-500">
+						<div
+							class={`text-xs 
+								${($settings?.highContrastMode ?? false) ? 'text-gray-800 dark:text-gray-100' : 'text-gray-500'}`}
+						>
 							{$i18n.t('Connect to your own OpenAPI compatible external tool servers.')}
 							<br />
 							{$i18n.t(
 								'CORS must be properly configured by the provider to allow requests from Open WebUI.'
 							)}
 						</div>
+					</div>
+
+					<div class=" text-xs text-gray-600 dark:text-gray-300 mb-2">
+						<a
+							class="underline"
+							href="https://github.com/open-webui/openapi-servers"
+							target="_blank">{$i18n.t('Learn more about OpenAPI tool servers.')}</a
+						>
 					</div>
 				</div>
 			</div>

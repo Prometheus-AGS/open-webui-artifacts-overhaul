@@ -6,38 +6,30 @@
 	import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
 	import Cog6 from '$lib/components/icons/Cog6.svelte';
 	import ConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
-	import AddServerModal from '$lib/components/AddServerModal.svelte';
+	import AddToolServerModal from '$lib/components/AddToolServerModal.svelte';
+	import WrenchAlt from '$lib/components/icons/WrenchAlt.svelte';
 
 	export let onDelete = () => {};
 	export let onSubmit = () => {};
 
-	export let pipeline = false;
-
-	export let url = '';
-	export let key = '';
-	export let config = {};
+	export let connection = null;
+	export let direct = false;
 
 	let showConfigModal = false;
 	let showDeleteConfirmDialog = false;
 </script>
 
-<AddServerModal
+<AddToolServerModal
 	edit
-	direct
+	{direct}
 	bind:show={showConfigModal}
-	connection={{
-		url,
-		key,
-		config
-	}}
+	{connection}
 	onDelete={() => {
 		showDeleteConfirmDialog = true;
 	}}
-	onSubmit={(connection) => {
-		url = connection.url;
-		key = connection.key;
-		config = connection.config;
-		onSubmit(connection);
+	onSubmit={(c) => {
+		connection = c;
+		onSubmit(c);
 	}}
 />
 
@@ -50,34 +42,21 @@
 />
 
 <div class="flex w-full gap-2 items-center">
-	<Tooltip
-		className="w-full relative"
-		content={$i18n.t(`WebUI will make requests to "{{url}}/openapi.json"`, {
-			url: url
-		})}
-		placement="top-start"
-	>
-		{#if !(config?.enable ?? true)}
-			<div
-				class="absolute top-0 bottom-0 left-0 right-0 opacity-60 bg-white dark:bg-gray-900 z-10"
-			></div>
-		{/if}
+	<Tooltip className="w-full relative" content={''} placement="top-start">
 		<div class="flex w-full">
-			<div class="flex-1 relative">
-				<input
-					class=" outline-hidden w-full bg-transparent {pipeline ? 'pr-8' : ''}"
-					placeholder={$i18n.t('API Base URL')}
-					bind:value={url}
-					autocomplete="off"
-				/>
+			<div
+				class="flex-1 relative flex gap-1.5 items-center {!(connection?.config?.enable ?? true)
+					? 'opacity-50'
+					: ''}"
+			>
+				<Tooltip content={connection?.type === 'mcp' ? $i18n.t('MCP') : $i18n.t('OpenAPI')}>
+					<WrenchAlt />
+				</Tooltip>
+				<div class=" capitalize outline-hidden w-full bg-transparent">
+					{connection?.info?.name ?? connection?.url}
+					<span class="text-gray-500">{connection?.info?.id}</span>
+				</div>
 			</div>
-
-			<SensitiveInput
-				inputClassName=" outline-hidden bg-transparent w-full"
-				placeholder={$i18n.t('API Key')}
-				bind:value={key}
-				required={false}
-			/>
 		</div>
 	</Tooltip>
 
